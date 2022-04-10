@@ -30,17 +30,37 @@ func setup(testfile string) *gorm.DB {
 	return db
 }
 
+func expect(t *testing.T, want string, is string) {
+	if want != is {
+		t.Errorf("ERROR: Wanted string \"%s\", is \"%s\".\n", want, is)
+	}
+}
+
 // Clears and removes testing environment
 func shutdown(testfile string) {
 	os.Remove(testfile)
 }
 
 func TestCreateRecipeEntry(t *testing.T) {
-	recipe := Recipe{Name: "Testnoodles", Description: "Add noodles to hot water, rinse, eat. Yumm."}
+	store := Store{Name: "Test Mall"}
+	recipe := Recipe{
+		Name:        "Testnoodles",
+		Description: "Add noodles to hot water, rinse, add test sauce, eat. Yumm.",
+		Ingredients: []Ingredient{
+			{Name: "Test Noodles", Store: store},
+			{Name: "Test Sauce", Store: store},
+		},
+	}
 	result := testDB.Create(&recipe)
 
+	var ret_recipe Recipe
+
 	if result.Error != nil {
-		t.Errorf("Create query returned %v, want nil", result.Error)
+		t.Errorf("CREATE query returned %v, want nil.\n", result.Error)
 	}
 
+	testDB.Where("name = ?", "Testnoodles").First(&ret_recipe)
+
+	expect(t, ret_recipe.Name, "Testnoodles")
+	expect(t, ret_recipe.Description, "Add noodles to hot water, rinse, add test sauce, eat. Yumm.")
 }
